@@ -1,20 +1,15 @@
 from django.shortcuts import render
-
-# Create your views here.
-
 from django.views.decorators.http import require_http_methods
 from opm import models
 from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 import json
+from django.forms import model_to_dict
+# Create your views here.
 
 @require_http_methods(["POST", "GET"])
 def opm_operate(request):
-    if request.method == "GET":
-        res = models.TblOperationMsg.objects.all()
-        json_data = serializers.serialize('json', res)
-        return HttpResponse(json_data, content_type="application/json")
-    elif request.method == "POST":
+    if request.method == "POST":
         json_data = json.loads(request.body)
         level_id = json_data.get('level_id')
         react = json_data.get('react')
@@ -31,9 +26,13 @@ def opm_operate(request):
         real_begin_time = json_data.get('real_begin_time')
         real_end_time = json_data.get('real_end_time')
         title = json_data.get('title')
-
-        res = models.TblOperationMsg.objects.create(level_id=level_id, react=react, content = content, start_time = start_time, end_time=end_time, interval=interval, period=period, begin_time=begin_time, stop_time=stop_time, real_begin_time=real_begin_time, real_end_time=real_end_time, title=title)
+        opm_level = models.TblOperationMsgLevel.objects.get(id=level_id)
+        res = models.TblOperationMsg.objects.create(level_id=level_id, react=react, description=content, start_time = start_time, end_time=end_time, interval=interval, period=period, begin_time=begin_time, stop_time=stop_time, real_begin_time=real_begin_time, real_end_time=real_end_time, title=title, display_region=opm_level.display_region, play_mode=opm_level.play_mode)
         return JsonResponse({'id' : res.id})
+    # elif request.method == "GET":
+        # res = models.TblOperationMsg.objects.all()
+        # json_data = serializers.serialize('json', res)
+        # return HttpResponse(json_data, content_type="application/json")
 
 @require_http_methods(["GET"])
 def get_opm_detail(request, opm_id):
@@ -44,3 +43,27 @@ def get_opm_detail(request, opm_id):
 @require_http_methods(["GET"])
 def opm_publish(request, opm_id):
     res = models.TblOperationMsg.filter(id=opm_id).update(status=1)
+
+@require_http_methods(["GET"])
+def get_opm_level(request):
+    res = models.TblOperationMsgLevel.objects.all()
+    json_list = []
+    for i in res:
+        json_dict = model_to_dict(i)
+        json_list.append(json_dict)
+    return JsonResponse(json_list, safe=False)
+
+@require_http_methods(["GET"])
+def get_opm(request):
+    res = models.TblOperationMsg.objects.all()
+    json_list = []
+    for i in res:
+        json_dict = model_to_dict(i)
+        json_list.append(json_dict)
+    data = {
+        "page_num": 1,
+        "page_size": 10,
+        "total": len(res),
+        "data": json_list
+    }
+    return JsonResponse(data)

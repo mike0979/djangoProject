@@ -18,6 +18,9 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/', include('fastApp.urls')),
+    path('api/v1/', include('user.urls')),
     path('api/v1/', include('opm.urls')),
+    path('api/v1/', include('fileHandler.urls')),
+    path('api/v1/', include('device.urls')),
+    path('api/v1/', include('location.urls')),
 ]

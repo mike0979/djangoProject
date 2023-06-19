@@ -19,8 +19,8 @@ class TblOperationMsg(models.Model):
     level = models.ForeignKey('TblOperationMsgLevel', models.DO_NOTHING, db_column='level', blank=True, null=True)
     display_region = models.IntegerField()
     play_mode = models.IntegerField()
-    start_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
+    start_time = models.CharField(max_length=255, blank=True, null=True)
+    end_time = models.CharField(max_length=255, blank=True, null=True)
     react = models.PositiveIntegerField(blank=True, null=True)
     count = models.IntegerField(blank=True, null=True)
     create_user = models.CharField(max_length=64, blank=True, null=True)
@@ -33,8 +33,8 @@ class TblOperationMsg(models.Model):
     begin_time = models.CharField(max_length=255, blank=True, null=True)
     stop_time = models.CharField(max_length=255, blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    real_begin_time = models.DateTimeField(blank=True, null=True)
-    real_end_time = models.DateTimeField(blank=True, null=True)
+    real_begin_time = models.CharField(max_length=255, blank=True, null=True)
+    real_end_time = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -58,6 +58,21 @@ class TblOperationMsgDeviceRel(models.Model):
         unique_together = (('device_id', 'operation_msg'),)
 
 
+class TblOperationMsgTemplate(models.Model):
+    user_type = models.IntegerField(blank=True, null=True)
+    title = models.CharField(max_length=32)
+    description = models.CharField(max_length=1024, blank=True, null=True)
+    level = models.ForeignKey('TblOperationMsgLevel', models.DO_NOTHING)
+    content = models.TextField()
+    create_time = models.DateTimeField(blank=True, null=True)
+    update_time = models.DateTimeField(blank=True, null=True)
+    delete_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_operation_msg_template'
+
+
 class TblOperationMsgLevel(models.Model):
     user_id = models.IntegerField(blank=True, null=True)
     user_type = models.IntegerField(blank=True, null=True)
@@ -74,18 +89,3 @@ class TblOperationMsgLevel(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_operation_msg_level'
-
-
-class TblOperationMsgTemplate(models.Model):
-    user_type = models.IntegerField(blank=True, null=True)
-    title = models.CharField(max_length=32)
-    description = models.CharField(max_length=1024, blank=True, null=True)
-    level = models.ForeignKey(TblOperationMsgLevel, models.DO_NOTHING)
-    content = models.TextField()
-    create_time = models.DateTimeField(blank=True, null=True)
-    update_time = models.DateTimeField(blank=True, null=True)
-    delete_time = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'tbl_operation_msg_template'
