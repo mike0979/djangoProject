@@ -3,7 +3,6 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 import json
 from user import models
-from django.core import serializers
 
 # Create your views here.
 
@@ -49,15 +48,44 @@ def user_operate(request):
         status = json_data.get('status')
         op_level = json_data.get('op_level')
         roles = json_data.get('roles')
-        res = models.TblUser.objects.create(account = account, name = name, description = description, password = password, status = status, op_level = op_level, password_wrong_num = 0, flag = 0)
+        res = models.TblUser.objects.create(account=account, name=name, description=description, password=password, status=status, op_level=op_level, password_wrong_num=0, flag=0)
         for role in roles:
             models.TblUserRoleRel.objects.create(user_id=res.id, role_id=role)
         return JsonResponse({'id' : res.id})
     if request.method == 'GET':
-        res = models.TblUser.objects.all()
-        json_data = serializers.serialize('json', res)
-        return HttpResponse(json_data, content_type="application/json")
+        res = models.TblUser.objects.all().values()
+        data = {
+            "page_num": 1,
+            "page_size": 10,
+            "total": len(res),
+            "data": list(res)
+        }
+        return JsonResponse(data)
 
 @require_http_methods(["GET"])
 def logout(request):
     return HttpResponse(status=200)
+
+@require_http_methods(["POST", "GET"])
+def role_operate(request):
+    if request.method == 'GET':
+        res = models.TblRole.objects.all().values()
+        data = {
+            "page_num": 1,
+            "page_size": 10,
+            "total": len(res),
+            "data": list(res)
+        }
+        return JsonResponse(data)
+
+@require_http_methods(["PUT"])
+def change_password(request, user_id):
+    json_data = json.loads(request.body)
+    new_pwd = json_data.get('new')
+    models.TblUser.objects.filter(id=user_id).update(password=new_pwd)
+    return HttpResponse(status=200)
+
+@require_http_methods(["GET"])
+def get_functions(request):
+    res = models.TblFunctionPermission.objects.all().values()
+    return JsonResponse(list(res), safe=False)
