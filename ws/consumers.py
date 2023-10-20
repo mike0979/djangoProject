@@ -1,34 +1,35 @@
-from channels.exceptions import StopConsumer
 from channels.generic.websocket import WebsocketConsumer
-from ws import models
+import json
+import logging
+
+# 获取logger对象
+logger = logging.getLogger('django')
+
+# 用于跟踪客户端连接的字典
+connected_clients = {}
+
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
-        '''
-        当有客户端向后端发送websocket连接请求时，自动触发该函数
-        :param message:
-        :return:
-        '''
-        # 服务器允许客户端创建连接
         self.accept()
+        # 获取客户端传递的code参数
+        self.code = self.scope['url_route']['kwargs']['code']
+        # 将该连接添加到connected_clients字典中
+        connected_clients[self.code] = self
 
-    def websocket_receive(self, message):
-        '''
-        浏览器基于websocket向后端发送数据，自动触发接受消息，并且处理信息
-        :param message:
-        :return:
-        '''
-        # 输出消息
-        account = self.scope['url_route']['kwargs']['code']
-        models.TblUser.objects.create(account=account, type=4)
-        print(account)
-        # 服务端向前端回消息
-        self.send('服务器收到了你的消息：%s' % (message['text']))
+    def websocket_receive(self, event):
+        message_text = event.get('text')
+        # 处理从客户端接收的消息
+        # 这里可以添加自定义的处理逻辑
+        self.send(f'服务器收到了你的消息：{message_text}')
 
-    def disconnect(self, message):
-        '''
-        客户端与服务端断开连接时，自动触发该函数
-        :param message:
-        :return:
-        '''
-        print('断开连接')
-        raise StopConsumer()
+    def disconnect(self, close_code):
+        # 在断开连接时从connected_clients字典中移除该连接
+        del connected_clients[self.code]
+
+def send_message_to_client(code, message):
+    # 通过code找到对应的客户端连接，并向其发送消息
+    if code in connected_clients:
+        connected_clients[code].send(json.dumps(message))
+        logger.info(message)
+    else:
+        logger.info(f"Client with code {code} not found.")

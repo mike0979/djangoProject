@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
@@ -33,8 +35,8 @@ def login(request):
             "update_time": update_time,
             "functions": functions,
             "locations": locations,
-            "devices": [
-            ]}
+            "devices": []
+        }
         return JsonResponse(data)
 
 @require_http_methods(["POST", "GET"])
@@ -53,10 +55,12 @@ def user_operate(request):
             models.TblUserRoleRel.objects.create(user_id=res.id, role_id=role)
         return JsonResponse({'id' : res.id})
     if request.method == 'GET':
+        page_num = request.GET.get('page_num')
+        page_size = request.GET.get('page_size')
         res = models.TblUser.objects.all().values()
         data = {
-            "page_num": 1,
-            "page_size": 10,
+            "page_num": page_num,
+            "page_size": page_size,
             "total": len(res),
             "data": list(res)
         }
@@ -66,17 +70,58 @@ def user_operate(request):
 def logout(request):
     return HttpResponse(status=200)
 
-@require_http_methods(["POST", "GET"])
-def role_operate(request):
-    if request.method == 'GET':
-        res = models.TblRole.objects.all().values()
-        data = {
-            "page_num": 1,
-            "page_size": 10,
-            "total": len(res),
-            "data": list(res)
-        }
-        return JsonResponse(data)
+@require_http_methods(['POST', 'GET', 'PUT', 'DELETE'])
+def role_operate(request, id=None):
+    if id == None:
+        if request.method == 'GET':
+            page_num = request.GET.get('page_num')
+            page_size = request.GET.get('page_size')
+            res = models.TblRole.objects.all().values()
+            data = {
+                "page_num": page_num,
+                "page_size": page_size,
+                "total": len(res),
+                "data": list(res)
+            }
+            return JsonResponse(data)
+        else:
+            json_data = json.loads(request.body)
+            name = json_data.get('name')
+            type = json_data.get('type')
+            description = json_data.get('description')
+            functions = json_data.get('functions')
+            locations = json_data.get('locations')
+            res = models.TblRole.objects.create(name=name, type=type, flag=0, description=description, update_time=datetime.datetime.now())
+            for function in functions:
+                models.TblRoleFunctionRel.objects.create(function_id=function, role_id=res.id)
+            for location in locations:
+                models.TblRoleLocationRel.objects.create(role_id=res.id, location_id=location)
+            return JsonResponse({'id': res.id})
+    else:
+        if request.method == 'DELETE':
+            models.TblRoleLocationRel.objects.filter(role_id=id).delete()
+            models.TblRoleFunctionRel.objects.filter(role_id=id).delete()
+            models.TblRole.objects.filter(id=id).delete()
+            return HttpResponse(status=200)
+        elif request.method == 'GET':
+            res = models.TblRole.objects.filter(id=id).values()
+            return JsonResponse(list(res), safe=False)
+        else:
+            json_data = json.loads(request.body)
+            name = json_data.get('name')
+            type = json_data.get('type')
+            description = json_data.get('description')
+            functions = json_data.get('functions')
+            locations = json_data.get('locations')
+            res = models.TblRole.objects.filter(id=id).update(name=name, type=type, flag=0, description=description, update_time=datetime.datetime.now())
+            models.TblRoleLocationRel.objects.filter(role_id=id).delete()
+            models.TblRoleFunctionRel.objects.filter(role_id=id).delete()
+            for function in functions:
+                models.TblRoleFunctionRel.objects.create(function_id=function, role_id=res.id)
+            for location in locations:
+                models.TblRoleLocationRel.objects.create(role_id=res.id, location_id=location)
+            return JsonResponse({'id': res.id})
+
 
 @require_http_methods(["PUT"])
 def change_password(request, user_id):

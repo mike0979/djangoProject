@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from user import views
 
 urlpatterns = [
@@ -7,6 +7,6 @@ urlpatterns = [
     path('logout', views.logout),
     path('roles', views.role_operate),
     path('pwd/<int:user_id>', views.change_password),
-    path('roles', views.role_operate),
+    re_path(r'^roles(?:/(?P<id>\d+))?$', views.role_operate),
     path('functions', views.get_functions),
 ]

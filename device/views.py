@@ -1,9 +1,8 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from device import models
-from location.models import TblLocation
+from django.db.models import F
 from django.http import JsonResponse, HttpResponse
-from django.db.models import OuterRef, Subquery
 import json
 # Create your views here.
 
@@ -28,16 +27,16 @@ def device_operate(request, id=None):
             power_device = json_data.get('power_device')
             power_num = json_data.get('power_num')
             line_type = json_data.get('line_type')
-            device_type = models.TblDeviceType.objects.get(id=device_type)
-            res = models.TblDevice.objects.create(user_id=2, user_type=1, code=code, name=name, description=description, line_id=line_id, host_device_id=host_device_id, device_type=device_type, location_id=location_id, station_id=station_id, life_cycle=life_cycle, ip=ip, mac=mac, resolution=resolution, service_time=service_time, power_device=power_device, power_num=power_num, line_type=line_type)
-            return JsonResponse({'id' : res.id})
+            res1 = models.TblDeviceType.objects.get(id=device_type)
+            res2 = models.TblDevice.objects.create(user_id=2, user_type=1, code=code, name=name, description=description, line_id=line_id, host_device_id=host_device_id, device_type=res1.id, location_id=location_id, station_id=station_id, life_cycle=life_cycle, ip=ip, mac=mac, resolution=resolution, service_time=service_time, power_device=power_device, power_num=power_num, line_type=line_type)
+            return JsonResponse({'id' : res2.id})
         elif request.method == "GET":
-            subquery = TblLocation.objects.filter(id=OuterRef('location_id'))
-            res = models.TblDevice.objects.annotate(location_type_id=Subquery(subquery.values('location_type_id'))).values()
-
+            page_num = request.GET.get('page_num')
+            page_size = request.GET.get('page_size')
+            res = models.TblDevice.objects.annotate(location_type_id=F('location__location_type__id')).values()
             data = {
-                "page_num": 1,
-                "page_size": 10,
+                "page_num": page_num,
+                "page_size": page_size,
                 "total": len(res),
                 "data": list(res)
             }
@@ -48,7 +47,7 @@ def device_operate(request, id=None):
         elif request.method == "PUT":
             pass
         elif request.method == "DELETE":
-            models.TblDevice.objects.filter(id=device_id).delete()
+            models.TblDevice.objects.filter(id=id).delete()
             return HttpResponse(status=200)
 
 @require_http_methods(["GET"])

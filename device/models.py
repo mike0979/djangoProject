@@ -14,7 +14,7 @@ class TblDevice(models.Model):
     code = models.CharField(unique=True, max_length=32)
     name = models.CharField(max_length=32)
     description = models.CharField(max_length=128, blank=True, null=True)
-    device_type = models.ForeignKey('TblDeviceType', models.DO_NOTHING, db_column='device_type', blank=True, null=True)
+    device_type = models.IntegerField(blank=True, null=True)
     location = models.ForeignKey('TblLocation', models.DO_NOTHING, blank=True, null=True)
     host_device_id = models.IntegerField(blank=True, null=True)
     line_id = models.IntegerField(blank=True, null=True)
@@ -39,7 +39,6 @@ class TblDevice(models.Model):
 
 
 class TblDeviceType(models.Model):
-    user_id = models.IntegerField(blank=True, null=True)
     user_type = models.IntegerField(blank=True, null=True)
     name = models.CharField(max_length=32, blank=True, null=True)
     description = models.CharField(max_length=128, blank=True, null=True)

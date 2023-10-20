@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
-
+from logging.handlers import TimedRotatingFileHandler
+import datetime
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -78,7 +79,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'djangoProject.wsgi.application'
-ASGI_APPLICATION = 'djangoProject.asgi.application'
+ASGI_APPLICATION = 'djangoProject.settings'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -138,7 +139,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 
@@ -169,3 +173,39 @@ CORS_ALLOW_HEADERS = (
     'use-agent', #This is a custom message header
     'token', #This is a custom message header
 )
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": '/home/log/interface_server/interface_server{:%Y%m%d}.log'.format(datetime.datetime.now()),
+            "when": "midnight",  # 每天创建一个新的日志文件
+            "backupCount": 7,  # 保留最近7个日志文件
+            "formatter": "verbose"
+        },
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}
